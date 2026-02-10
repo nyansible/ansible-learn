@@ -1,0 +1,48 @@
+# Playbook - defines WHAT to do on WHICH hosts
+# Run with: ansible-playbook playbook.yml
+
+---
+- name: My First Playbook
+  hosts: local                    # Which hosts from inventory to target
+  gather_facts: true              # Collect info about the system first
+
+  # Variables - reusable values
+  vars:
+    greeting: "Hello from Ansible!"
+    output_file: "/tmp/ansible-test.txt"
+
+  # Tasks - actions to perform (in order)
+  tasks:
+    - name: Display a message
+      debug:
+        msg: "{{ greeting }}"
+
+    - name: Show system info gathered by Ansible
+      debug:
+        msg: "Running on {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Create a file with content
+      copy:
+        content: |
+          This file was created by Ansible!
+          Hostname: {{ ansible_hostname }}
+          Date: {{ ansible_date_time.iso8601 }}
+          OS: {{ ansible_distribution }}
+        dest: "{{ output_file }}"
+
+    - name: Read the file we just created
+      command: cat {{ output_file }}
+      register: file_contents       # Save output to a variable
+
+    - name: Show file contents
+      debug:
+        msg: "{{ file_contents.stdout_lines }}"
+
+    - name: Check if a package is installed (example with git)
+      command: which git
+      register: git_check
+      ignore_errors: true           # Don't fail if git isn't installed
+
+    - name: Report git status
+      debug:
+        msg: "{{ 'Git is installed at ' + git_check.stdout if git_check.rc == 0 else 'Git is NOT installed' }}"
